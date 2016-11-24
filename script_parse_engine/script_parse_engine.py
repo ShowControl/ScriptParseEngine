@@ -5,6 +5,7 @@ __author__ = 'bapril'
 __version__ = '0.0.1'
 import Tkinter as tk
 import re
+import json
 
 class ScriptParseEngine(object):
     """ScriptParseEngine Class"""
@@ -44,30 +45,48 @@ class ScriptParseEngine(object):
         pattern = '^#([a-z]*|#|_)'
         match = re.search(pattern, self.input)
         end = match.end()
-        self.current_tag_name = self.input[1:end]
+        self.tag = {}
+        self.tag['type'] = self.input[1:end]
+        self.current_tag_name = self.tag['type']
+
         self.input = self.input[end:]
+        #TODO take non-data tags
         options = {
             '{' : self.parse_json_tag,
             '(' : self.parse_text_tag,
-            '_' : self.parse_char_tag,
         }
         options[self.input[0]]()
 
-    def parse_char_tag(self):
-        """We found a character tag, parse it."""
-        self.input = self.input[1:] #Strip the _
-        self.tag = {}
-        self.tag['name'] = 'character'
-        #index_close = self.input.index(' ')
-
     def parse_json_tag(self):
         """Parse the JSON tag"""
-        self.tag = {}
+        string = self.map_json_string("", 0)
+        try:
+            self.tag = json.loads(string)
+            self.tag['type'] = self.current_tag_name
+            self.output.append(self.tag)
+        except:
+            print "ERROR Parsing JSON"
+            self.tag['type'] = 'invalid'
+            self.tag['error'] = 'Unable to parse JSON'
+            self.tag['text'] = string
+            self.output.append(self.tag)
+
+    def map_json_string(self, output, level):
+        """Deal with multi-layered json"""
+        #TODO case where JSON never ends.
+        if self.input[0] == "}":
+            level = level - 1
+        elif self.input[0] == "{":
+            level = level + 1
+        output = output + self.input[0]
+        self.input = self.input[1:]
+        if level == 0:
+            return output
+        else:
+            return self.map_json_string(output, level)
 
     def parse_text_tag(self):
         """Found a text tag, parse it"""
-        self.tag = {}
-        self.tag['name'] = self.current_tag_name
         self.tag['text'] = ""
         self.input = self.input[1:] #Strip the (
         while True:
