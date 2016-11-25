@@ -64,7 +64,7 @@ class ScriptParseEngine(object):
             self.tag = json.loads(string)
             self.tag['type'] = self.current_tag_name
             self.output.append(self.tag)
-        except:
+        except ValueError:
             print "ERROR Parsing JSON"
             self.tag['type'] = 'invalid'
             self.tag['error'] = 'Unable to parse JSON'
@@ -73,7 +73,8 @@ class ScriptParseEngine(object):
 
     def map_json_string(self, output, level):
         """Deal with multi-layered json"""
-        #TODO case where JSON never ends.
+        if len(self.input) < 1:
+            return output
         if self.input[0] == "}":
             level = level - 1
         elif self.input[0] == "{":
