@@ -15,13 +15,23 @@ class ScriptParseEngine(object):
         self.current_tag_name = None
         self.tag = None
         self.output = []
+        if type(source).__name__ == 'instance':
+            self.source_type = str(source.__class__)
+        elif type(source).__name__ == 'file':
+            self.source_type = 'file'
+        else:
+            print "Unknown source: %s" % type(source).__name__
 
     def update(self):
         """Pull a new version of the text and re-parse"""
-        #TODO Reflection on source and target should drive action.
         #erase what we have there
         self.output = []
-        self.input = self.source.get("1.0", tk.END)
+        if self.source_type == 'file':
+            self.input = self.source.read()
+        elif self.source_type == 'Tkinter.Text':
+            self.input = self.source.get("1.0", tk.END)
+        else:
+            print "Don't know source object type: %s" % self.source_type
         self.parse_text()
         return self.output
 
